@@ -12,7 +12,8 @@ def run_intersection_world(data_collection=False):
     states = []
     actions = []
     # instantiate world
-    wenv = IntersectionScenario()
+    visualize = False if data_collection else True
+    wenv = IntersectionScenario(visualize=visualize)
     if not data_collection:
         wenv.render()
     o, d = wenv.reset(), False
@@ -45,4 +46,4 @@ def collect_data_for_imititation_learning(experiment_method, num_runs=50, outfil
         np.save(action_outfle, action_data)
         print("saved data to {}".format(statefilepath))
 
-collect_data_for_imititation_learning(experiment_method=run_intersection_world, num_runs=10, outfilepath="intersectionsimple_test")
+collect_data_for_imititation_learning(experiment_method=run_intersection_world, num_runs=50, outfilepath="intersectionsimple_train")

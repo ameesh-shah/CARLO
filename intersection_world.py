@@ -1,4 +1,3 @@
-from typing_extensions import Self
 import numpy as np
 from world import World
 from agents import Car, RectangleBuilding, Pedestrian, Painting
@@ -10,13 +9,14 @@ import gym
 
 
 class IntersectionScenario(gym.Env):
-    def __init__(self):
+    def __init__(self, visualize=True):
         self.seed(0) # just in case we forget seeding
         
         self.init_ego = Car(Point(20, 20), heading = np.pi/2)
         self.init_ego.velocity = Point(1., 0.)
         self.init_adv = Car(Point(105, 90), heading = np.pi, color='blue')
         self.init_adv.velocity = Point(0., 0.)
+        self.visualize = visualize
         
         self.collision_point = Point(20, 90)
         self.target = Point(20, 120)
@@ -31,7 +31,7 @@ class IntersectionScenario(gym.Env):
         self.reset()
         
     def initiate_world(self):
-        self.world = World(self.dt, width = 120, height = 120, ppm = 5)
+        self.world = World(self.dt, width = 120, height = 120, ppm = 5, visualize=self.visualize)
         self.world.add(RectangleBuilding(Point(72.5, 107.5), Point(95, 25)))
         self.world.add(RectangleBuilding(Point(7.5, 107.5), Point(15, 25)))
         self.world.add(RectangleBuilding(Point(7.5, 40), Point(15, 80)))
