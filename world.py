@@ -4,6 +4,8 @@ from typing import Union
 
 class World:
     def __init__(self, dt: float, width: float, height: float, ppm: float = 8, visualize=True):
+        self.height = height
+        self.width = width
         self.dynamic_agents = []
         self.static_agents = []
         self.t = 0 # simulation time

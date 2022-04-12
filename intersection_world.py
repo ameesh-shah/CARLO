@@ -21,10 +21,11 @@ class IntersectionScenario(gym.Env):
         self.collision_point = Point(20, 90)
         self.target = Point(20, 120)
         self.wall = Point(25, 80)
+        self.turn_wall = Point(15, 80)
         
         self.noise_adv_pos = 1.0
         self.noise_adv_vel = 1.0
-        self.dt = 0.025
+        self.dt = 0.065
         self.T = 40
         
         self.initiate_world()
@@ -99,7 +100,7 @@ class IntersectionScenario(gym.Env):
             else:
                 return np.array([0, 2.], dtype=np.float32)
         
-    def get_ego_control(self,policy_no=1):
+    def get_ego_control(self,policy_no=2):
         ttc_ego = (self.collision_point.y - self.ego.y) / np.abs(self.ego.yp + 1e-8)
         ttc_adv = (self.adv.x - self.collision_point.x) / np.abs(self.adv.xp + 1e-8)
         if policy_no==0: # aggressive
@@ -120,6 +121,32 @@ class IntersectionScenario(gym.Env):
                 return np.array([0, np.minimum(1.0, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand()*0.2 - 0.1))], dtype=np.float32)
             else:
                 return np.array([0, -2.75-np.random.rand()*0.25], dtype=np.float32)
+        elif policy_no == 2: # try a left turn!
+            ttw_ego = (self.turn_wall.x - self.ego.x)
+            if ttc_ego < ttc_adv - 0.5 or not self.ego_can_see_adv:
+                return np.array([0, np.minimum(1.0, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand()*0.2 - 0.1))], dtype=np.float32)
+            elif ttc_adv > 0.3:
+                return np.array([0, -2.75-np.random.rand()*0.25], dtype=np.float32)
+            elif ttw_ego < 3.60:
+                return np.array([0.45, 0.55 + 0.05*self.np_random.rand()], dtype=np.float32) 
+            elif self.ego.heading < np.pi:
+                return np.array([.10, 0.0], dtype=np.float32) #don't accelerate
+            else:
+                return np.array([0, 0.2], dtype=np.float32)
+        elif policy_no == 3: # try a right turn!
+            ttw_ego = (self.wall.x - self.ego.x)
+            tty_ego = (self.wall.y - self.ego.y)
+            if ttc_ego < ttc_adv - 0.6 or not self.ego_can_see_adv:
+                # slowly accelerate?
+                return np.array([0, np.minimum(0.7, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand()*0.2 - 0.1))], dtype=np.float32)
+            if tty_ego > 0:
+                return np.array([0, -1.65-np.random.rand()*0.15], dtype=np.float32)
+            if ttw_ego > -7.60:
+                return np.array([-.46, 0.0], dtype=np.float32) #don't accelerate
+            elif self.ego.heading > np.pi:
+                return np.array([0.415, 0.55 + 0.05*self.np_random.rand()], dtype=np.float32) # accelerate out 
+            else:
+                return np.array([0, 0.2], dtype=np.float32)
 
     @property
     def target_reached(self):
@@ -128,6 +155,10 @@ class IntersectionScenario(gym.Env):
     @property
     def collision_exists(self):
         return self.ego.collidesWith(self.adv)
+    
+    @property
+    def reached_off_map(self):
+        return self.ego.x < 0 or self.ego.x > self.world.width or self.ego.y < 0 or self.ego.y > self.world.height
         
     def step(self, action):
         info = {}
@@ -146,7 +177,7 @@ class IntersectionScenario(gym.Env):
 
 
         self.world.tick()
-        return self._get_obs(), 0, self.collision_exists or self.target_reached or self.world.t >= self.T, info
+        return self._get_obs(), 0, self.collision_exists or self.target_reached or self.world.t >= self.T or self.reached_off_map, info
         
     def _get_obs(self):
         return np.array([self.ego.center.x, self.ego.center.y, self.ego.velocity.x, self.ego.center.y,
