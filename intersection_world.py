@@ -166,6 +166,8 @@ class IntersectionScenario(gym.Env):
             action = action[0]
         if action is None:
             ego_action = self.get_ego_control()
+        elif action in [1,2,3]:
+            ego_action = self.get_ego_control(policy_no=action)
         else:
             action = np.clip(action, self.action_space.low, self.action_space.high)
             ego_action = np.array([0, action], dtype=np.float32)
