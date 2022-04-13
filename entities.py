@@ -1,5 +1,5 @@
 import numpy as np
-from geometry import Point, Rectangle, Circle, Ring
+from CARLO.geometry import Point, Rectangle, Circle, Ring
 from typing import Union
 import copy
 

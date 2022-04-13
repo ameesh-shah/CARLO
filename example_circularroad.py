@@ -1,7 +1,7 @@
 import numpy as np
-from world import World
-from agents import Car, RingBuilding, CircleBuilding, Painting, Pedestrian
-from geometry import Point
+from CARLO.world import World
+from CARLO.agents import Car, RingBuilding, CircleBuilding, Painting, Pedestrian
+from CARLO.geometry import Point
 import time
 from tkinter import *
 

@@ -1,7 +1,7 @@
 import numpy as np
-from world import World
-from agents import Car, RectangleBuilding, Pedestrian, Painting
-from geometry import Point
+from CARLO.world import World
+from CARLO.agents import Car, RectangleBuilding, Pedestrian, Painting
+from CARLO.geometry import Point
 from gym.spaces import Box, Discrete
 from gym.utils import seeding
 import time
@@ -9,7 +9,7 @@ import gym
 
 
 class IntersectionScenario(gym.Env):
-    def __init__(self, visualize=True):
+    def __init__(self, visualize=True, dt=0.025):
         self.seed(0) # just in case we forget seeding
         
         self.init_ego = Car(Point(20, 20), heading = np.pi/2)
@@ -25,7 +25,7 @@ class IntersectionScenario(gym.Env):
         
         self.noise_adv_pos = 1.0
         self.noise_adv_vel = 1.0
-        self.dt = 0.065
+        self.dt = dt
         self.T = 40
         
         self.initiate_world()
@@ -168,7 +168,7 @@ class IntersectionScenario(gym.Env):
             ego_action = self.get_ego_control()
         else:
             action = np.clip(action, self.action_space.low, self.action_space.high)
-            ego_action = np.array([0, action], dtype=np.float32)
+            ego_action = np.array(action, dtype=np.float32)
         adv_action = self.get_adv_control()
         
         self.ego.set_control(*ego_action)

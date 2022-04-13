@@ -1,5 +1,5 @@
-from agents import Car, Pedestrian, RectangleBuilding
-from entities import Entity
+from CARLO.agents import Car, Pedestrian, RectangleBuilding
+from CARLO.entities import Entity
 from typing import Union
 
 class World:
@@ -12,7 +12,7 @@ class World:
         self.dt = dt # simulation time step
         self.visualize = visualize
         if self.visualize:
-            from visualizer import Visualizer
+            from CARLO.visualizer import Visualizer
             self.visualizer = Visualizer(width, height, ppm=ppm)
         
     def add(self, entity: Entity):
