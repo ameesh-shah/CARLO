@@ -185,12 +185,12 @@ class IntersectionScenario(gym.Env):
         return self._get_obs(), 0, self.collision_exists or self.target_reached or self.world.t >= self.T or self.reached_off_map, info
         
     def _get_obs(self):
-        return np.array([self.ego.center.x, self.ego.center.y, self.ego.velocity.x, self.ego.center.y,
-        self.adv.center.x, self.adv.center.y, self.adv.velocity.x, self.adv.velocity.y])
+        return np.array([self.ego.center.x, self.ego.center.y, self.ego.velocity.x, self.ego.center.y, self.ego.heading,
+        self.adv.center.x, self.adv.center.y, self.adv.velocity.x, self.adv.velocity.y, self.adv.heading])
     
     def _get_ext_obs(self):
-        prev_ego_features_1 = self.obs_prev_1[:4]
-        prev_ego_features_2 = self.obs_prev_2[:4]
+        prev_ego_features_1 = self.obs_prev_1[:5]
+        prev_ego_features_2 = self.obs_prev_2[:5]
         return np.concatenate((self._get_obs(), prev_ego_features_1, prev_ego_features_2))
 
 
