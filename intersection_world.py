@@ -183,7 +183,7 @@ class IntersectionScenario(gym.Env):
         
         self.ego.set_control(*ego_action)
         self.adv.set_control(*adv_action)
-        info["previous_state_action"] = [self._get_ext_obs(), ego_action]
+        info["previous_state_action"] = [self._get_obs(), ego_action]
 
         self.obs_prev_2 = self.obs_prev_1
         self.obs_prev_1 = self._get_obs()
