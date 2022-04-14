@@ -102,7 +102,7 @@ class IntersectionScenario(gym.Env):
             else:
                 return np.array([0, 2.], dtype=np.float32)
         
-    def get_ego_control(self,policy_no=2):
+    def get_ego_control(self,policy_no=1):
         ttc_ego = (self.collision_point.y - self.ego.y) / np.abs(self.ego.yp + 1e-8)
         ttc_adv = (self.adv.x - self.collision_point.x) / np.abs(self.adv.xp + 1e-8)
         if policy_no==0: # aggressive
@@ -124,17 +124,23 @@ class IntersectionScenario(gym.Env):
             else:
                 return np.array([0, -2.75-np.random.rand()*0.25], dtype=np.float32)
         elif policy_no == 2: # try a left turn!
-            ttw_ego = (self.turn_wall.x - self.ego.x)
-            if ttc_ego < ttc_adv - 0.5 or not self.ego_can_see_adv:
+            ttw_left_ego = (self.turn_wall.x - self.ego.x)
+            ttw_ego = (self.wall.y - self.ego.y)/np.abs(self.ego.yp + 1e-8)
+
+            if ttc_ego < -1 or ttc_adv < -1:
+                if ttw_left_ego < -1.0:
+                    return np.array([0.75, 1.25 + 0.05*self.np_random.rand()], dtype=np.float32)
+                else:
+                    if self.ego.heading < np.pi:
+                        return np.array([.10, 0.0], dtype=np.float32) #don't accelerate
+                    else:
+                        return np.array([0, 0.2], dtype=np.float32)
+            elif ttw_ego > 1.0 and ttw_ego < 4.5:
+                return np.array([0, 0], dtype=np.float32)
+            elif ttc_ego < ttc_adv - 0.3 or not self.ego_can_see_adv:
                 return np.array([0, np.minimum(1.0, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand()*0.2 - 0.1))], dtype=np.float32)
-            elif ttc_adv > 0.3:
-                return np.array([0, -2.75-np.random.rand()*0.25], dtype=np.float32)
-            elif ttw_ego < 3.60:
-                return np.array([0.45, 0.55 + 0.05*self.np_random.rand()], dtype=np.float32) 
-            elif self.ego.heading < np.pi:
-                return np.array([.10, 0.0], dtype=np.float32) #don't accelerate
             else:
-                return np.array([0, 0.2], dtype=np.float32)
+                return np.array([0, -2.75-np.random.rand()*0.25], dtype=np.float32)
         elif policy_no == 3: # try a right turn!
             ttw_ego = (self.wall.x - self.ego.x)
             tty_ego = (self.wall.y - self.ego.y)
