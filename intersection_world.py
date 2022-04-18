@@ -51,8 +51,8 @@ class IntersectionScenario(gym.Env):
         self.add_noise()
 
         self.world.reset()
-        self.obs_prev_1 = self._get_obs()
-        self.obs_prev_2 = self._get_obs()
+        # self.obs_prev_1 = self._get_obs()
+        # self.obs_prev_2 = self._get_obs()
         
         self.world.add(self.ego)
         self.world.add(self.adv)
@@ -177,10 +177,10 @@ class IntersectionScenario(gym.Env):
         
         self.ego.set_control(*ego_action)
         self.adv.set_control(*adv_action)
-        info["previous_state_action"] = [self._get_ext_obs(), ego_action]
+        info["previous_state_action"] = [self._get_obs(), ego_action]
 
-        self.obs_prev_2 = self.obs_prev_1
-        self.obs_prev_1 = self._get_obs()
+        # self.obs_prev_2 = self.obs_prev_1
+        # self.obs_prev_1 = self._get_obs()
         self.world.tick()
         return self._get_obs(), 0, self.collision_exists or self.target_reached or self.world.t >= self.T or self.reached_off_map, info
         

@@ -7,9 +7,10 @@ from world import World
 from typing import Union, Optional
 from intersection_world import IntersectionScenario
 from tqdm import tqdm
+from train import run_train
 
 
-def run_intersection_world(data_collection=False, policy_behavior=1, separate_controls=False):
+def run_intersection_world(data_collection=False, policy_behavior=1, separate_controls=False, manual_control_function=None):
     states = []
     if separate_controls:
         accel_actions = []
@@ -23,8 +24,13 @@ def run_intersection_world(data_collection=False, policy_behavior=1, separate_co
         wenv.render()
     o, d = wenv.reset(), False
     while not d:
-        a = policy_behavior
-        o, r, d, info = wenv.step(policy_behavior)
+        if manual_control_function is not None:
+            obs_in = torch.tensor(o).float().unsqueeze(0)
+            a = manual_control_function(obs_in)
+            a = a.squeeze().detach().numpy().tolist()
+        else:
+            a = policy_behavior
+        o, r, d, info = wenv.step(a)
         if data_collection:
             state, action = info["previous_state_action"]
             states.append(state)
@@ -80,3 +86,8 @@ def collect_data_for_imititation_learning(experiment_method, num_runs=50, outfil
         with open(actionfilepath, "wb") as action_outfle:
             np.save(action_outfle, action_data)
             print("saved data to {}".format(actionfilepath))
+
+#collect_data_for_imititation_learning(experiment_method=run_intersection_world, num_runs=50, outfilepath="intersectionsimple_train_3", policy_behavior=3)
+#run_intersection_world(data_collection=False, policy_behavior=1, separate_controls=False, manual_control_function=None)
+model = run_train("intersectionsimple_train_1")
+run_intersection_world(manual_control_function=model)
