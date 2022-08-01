@@ -41,7 +41,7 @@ def run_intersection_world(data_collection=False, policy_behavior=1, separate_co
     else:
         return np.array(states), np.array(actions)
 
-def collect_data_for_imititation_learning(experiment_method, num_runs=50, outfilepath=None, policy_behavior=1, separate_controls=False):
+def collect_data_for_imitation_learning(experiment_method, num_runs=50, outfilepath=None, policy_behavior=1, separate_controls=False):
     state_data = []
     if separate_controls:
         steer_action_data = []
@@ -49,7 +49,7 @@ def collect_data_for_imititation_learning(experiment_method, num_runs=50, outfil
     else:
         action_data = []
     if outfilepath is None:
-        outfilepath + "trialrun"
+        outfilepath = "trialrun"
     print("beginning data collection...")
     for _ in tqdm(range(num_runs)):
         datatuple = experiment_method(data_collection=True, policy_behavior=policy_behavior, separate_controls=separate_controls)
@@ -80,3 +80,7 @@ def collect_data_for_imititation_learning(experiment_method, num_runs=50, outfil
         with open(actionfilepath, "wb") as action_outfle:
             np.save(action_outfle, action_data)
             print("saved data to {}".format(actionfilepath))
+
+
+if __name__ == '__main__':
+    run_intersection_world(policy_behavior=1)

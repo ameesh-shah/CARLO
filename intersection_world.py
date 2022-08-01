@@ -25,7 +25,7 @@ class IntersectionScenario(gym.Env):
         
         self.noise_adv_pos = 1.0
         self.noise_adv_vel = 1.0
-        self.dt = 0.065
+        self.dt = 0.1
         self.T = 40
         
         self.initiate_world()
@@ -101,60 +101,79 @@ class IntersectionScenario(gym.Env):
                 return np.array([0, -2.], dtype=np.float32)
             else:
                 return np.array([0, 2.], dtype=np.float32)
-        
+
+    def get_cautious_ego_control(self, ttc_ego, ttc_adv):
+        ttw_ego = (self.wall.y - self.ego.y) / np.abs(self.ego.yp + 1e-8)
+        if ttc_ego < 0.05 or ttc_adv < 0:
+            return np.array([0, 1.95 + 0.05 * self.np_random.rand()], dtype=np.float32)
+        elif ttw_ego > 1.0 and ttw_ego < 4.5:
+            return np.array([0, 0], dtype=np.float32)
+        elif ttc_ego < ttc_adv - 0.3 or not self.ego_can_see_adv:
+            return np.array(
+                [0, np.minimum(1.0, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand() * 0.2 - 0.1))],
+                dtype=np.float32)
+        else:
+            return np.array([0, -2.75 - np.random.rand() * 0.25], dtype=np.float32)
+
+    def get_left_turn_ego_control(self, ttc_ego, ttc_adv):
+        ttw_left_ego = (self.turn_wall.x - self.ego.x)
+        ttw_ego = (self.wall.y - self.ego.y) / np.abs(self.ego.yp + 1e-8)
+
+        if ttc_ego < -1 or ttc_adv < -1:
+            if ttw_left_ego < -1.0:
+                return np.array([0.75, 1.25 + 0.05 * self.np_random.rand()], dtype=np.float32)
+            else:
+                if self.ego.heading < np.pi:
+                    return np.array([.10, 0.0], dtype=np.float32)  # don't accelerate
+                else:
+                    return np.array([0, 0.2], dtype=np.float32)
+        elif ttw_ego > 1.0 and ttw_ego < 4.5:
+            return np.array([0, 0], dtype=np.float32)
+        elif ttc_ego < ttc_adv - 0.3 or not self.ego_can_see_adv:
+            return np.array(
+                [0, np.minimum(1.0, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand() * 0.2 - 0.1))],
+                dtype=np.float32)
+        else:
+            return np.array([0, -2.75 - np.random.rand() * 0.25], dtype=np.float32)
+
+    def get_aggressive_ego_control(self, ttc_ego, ttc_adv):
+        if ttc_ego < 0.05 or ttc_adv < 0:
+            return np.array([0, 1.95 + 0.05 * self.np_random.rand()], dtype=np.float32)
+        elif ttc_ego < ttc_adv - 0.1 or not self.ego_can_see_adv:
+            return np.array(
+                [0, np.minimum(2.0, np.maximum(1.2, self.ego.inputAcceleration + self.np_random.rand() * 0.2 - 0.1))],
+                dtype=np.float32)
+        else:
+            return np.array([0, -3.25 - np.random.rand() * 0.25], dtype=np.float32)
+
+    def get_right_turn_ego_control(self, ttc_ego, ttc_adv):
+        ttw_ego = (self.wall.x - self.ego.x)
+        tty_ego = (self.wall.y - self.ego.y)
+        if ttc_ego < ttc_adv - 0.6 or not self.ego_can_see_adv:
+            # slowly accelerate?
+            return np.array(
+                [0, np.minimum(0.7, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand() * 0.2 - 0.1))],
+                dtype=np.float32)
+        if tty_ego > 0:
+            return np.array([0, -1.65 - np.random.rand() * 0.15], dtype=np.float32)
+        if ttw_ego > -7.60:
+            return np.array([-.46, 0.0], dtype=np.float32)  # don't accelerate
+        elif self.ego.heading > np.pi:
+            return np.array([0.415, 0.55 + 0.05 * self.np_random.rand()], dtype=np.float32)  # accelerate out
+        else:
+            return np.array([0, 0.2], dtype=np.float32)
+
     def get_ego_control(self,policy_no=1):
         ttc_ego = (self.collision_point.y - self.ego.y) / np.abs(self.ego.yp + 1e-8)
         ttc_adv = (self.adv.x - self.collision_point.x) / np.abs(self.adv.xp + 1e-8)
-        if policy_no==0: # aggressive
-            if ttc_ego < 0.05 or ttc_adv < 0:
-                return np.array([0, 1.95 + 0.05*self.np_random.rand()], dtype=np.float32)
-            elif ttc_ego < ttc_adv - 0.1 or not self.ego_can_see_adv:
-                return np.array([0, np.minimum(2.0, np.maximum(1.2, self.ego.inputAcceleration + self.np_random.rand()*0.2 - 0.1))], dtype=np.float32)
-            else:
-                return np.array([0, -3.25-np.random.rand()*0.25], dtype=np.float32)
-            
-        elif policy_no==1: # cautious
-            ttw_ego = (self.wall.y - self.ego.y)/np.abs(self.ego.yp + 1e-8)
-            if ttc_ego < 0.05 or ttc_adv < 0:
-                return np.array([0, 1.95 + 0.05*self.np_random.rand()], dtype=np.float32)
-            elif ttw_ego > 1.0 and ttw_ego < 4.5:
-                return np.array([0, 0], dtype=np.float32)
-            elif ttc_ego < ttc_adv - 0.3 or not self.ego_can_see_adv:
-                return np.array([0, np.minimum(1.0, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand()*0.2 - 0.1))], dtype=np.float32)
-            else:
-                return np.array([0, -2.75-np.random.rand()*0.25], dtype=np.float32)
-        elif policy_no == 2: # try a left turn!
-            ttw_left_ego = (self.turn_wall.x - self.ego.x)
-            ttw_ego = (self.wall.y - self.ego.y)/np.abs(self.ego.yp + 1e-8)
-
-            if ttc_ego < -1 or ttc_adv < -1:
-                if ttw_left_ego < -1.0:
-                    return np.array([0.75, 1.25 + 0.05*self.np_random.rand()], dtype=np.float32)
-                else:
-                    if self.ego.heading < np.pi:
-                        return np.array([.10, 0.0], dtype=np.float32) #don't accelerate
-                    else:
-                        return np.array([0, 0.2], dtype=np.float32)
-            elif ttw_ego > 1.0 and ttw_ego < 4.5:
-                return np.array([0, 0], dtype=np.float32)
-            elif ttc_ego < ttc_adv - 0.3 or not self.ego_can_see_adv:
-                return np.array([0, np.minimum(1.0, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand()*0.2 - 0.1))], dtype=np.float32)
-            else:
-                return np.array([0, -2.75-np.random.rand()*0.25], dtype=np.float32)
-        elif policy_no == 3: # try a right turn!
-            ttw_ego = (self.wall.x - self.ego.x)
-            tty_ego = (self.wall.y - self.ego.y)
-            if ttc_ego < ttc_adv - 0.6 or not self.ego_can_see_adv:
-                # slowly accelerate?
-                return np.array([0, np.minimum(0.7, np.maximum(0.4, self.ego.inputAcceleration + self.np_random.rand()*0.2 - 0.1))], dtype=np.float32)
-            if tty_ego > 0:
-                return np.array([0, -1.65-np.random.rand()*0.15], dtype=np.float32)
-            if ttw_ego > -7.60:
-                return np.array([-.46, 0.0], dtype=np.float32) #don't accelerate
-            elif self.ego.heading > np.pi:
-                return np.array([0.415, 0.55 + 0.05*self.np_random.rand()], dtype=np.float32) # accelerate out 
-            else:
-                return np.array([0, 0.2], dtype=np.float32)
+        if policy_no == 0:  # aggressive
+            self.get_aggressive_ego_control(ttc_ego, ttc_adv)
+        elif policy_no == 1:  # cautious
+            self.get_cautious_ego_control(ttc_ego, ttc_adv)
+        elif policy_no == 2:  # try a left turn!
+            self.get_left_turn_ego_control(ttc_ego, ttc_adv)
+        elif policy_no == 3:  # try a right turn!
+            self.get_right_turn_ego_control(ttc_ego, ttc_adv)
 
     @property
     def target_reached(self):
